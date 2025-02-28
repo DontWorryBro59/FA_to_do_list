@@ -1,8 +1,9 @@
 from sqlalchemy import select
+from fastapi import HTTPException, status as http_status
 
 from database import new_session
 from models.orm_model import UsersORM, TasksORM
-from models.schemas import UserSchema, TaskSchema, UserSchemaForORM, TaskSchemaForOrm
+from models.schemas import UserSchema, TaskSchema, UserSchemaForORM, TaskSchemaForOrm, AssignIDTaskSchema
 
 
 class UserRepository:
@@ -64,5 +65,25 @@ class TaskRepository:
                 old_task.date_of_completion = data.date_of_completion
                 await session.commit()
             except Exception as e:
-                return str(e)
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
         return f'Запись с id {task_id} была изменена'
+
+    @classmethod
+    async def assign_task_for_id(cls, data: AssignIDTaskSchema) -> str:
+        async with new_session() as session:
+            query = select(TasksORM).where(TasksORM.id == data.task_id)
+            task = await session.execute(query)
+            task = task.scalars().first()
+            if not task:
+                return f'Задача с id {data.task_id} не была найдена'
+            query = select(UsersORM).where(UsersORM.id == data.user_id)
+            user = await session.execute(query)
+            user = user.scalars().first()
+            if not user:
+                return f'Пользователь с id {data.user_id} не был найден'
+            try:
+                task.executor = user.full_worker_name
+                await session.commit()
+            except Exception as e:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
+        return f'Запись с id {data.task_id} была изменена'

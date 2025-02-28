@@ -47,6 +47,11 @@ class TaskSchemaForOrm(TaskSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AssignIDTaskSchema(BaseModel):
+    task_id: int = Field(..., description="Task ID / ID задачи")
+    user_id : int = Field(..., description="User ID / ID пользователя")
+
+
 # Schemas for Users =====================================================================================
 class UserSchema(BaseModel):
     full_worker_name: str = Field(..., min_lenght=2, max_length=100, description="User name / Имя пользователя")
