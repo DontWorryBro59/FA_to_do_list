@@ -46,7 +46,7 @@ async def update_task(task: Annotated[TaskSchemaForOrm, Depends()]) -> MessageSc
     return message
 
 
-@tasks_router.put('/assign_user_to_task_id/',
+@tasks_router.patch('/assign_user_to_task_id/',
                    summary='Assign user to task / Присвоить пользователю задачу')
 async def assign_user_to_task_id(data: Annotated[AssignIDTaskSchema, Depends()]) -> MessageSchema:
     msg = await TaskRepository.assign_task_for_id(data)
