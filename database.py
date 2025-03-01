@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from models.orm_model import Base
 
-
 database_irl = 'postgresql+asyncpg://postgres:11223344Qq@localhost:5432/todolist'
 engine = create_async_engine(database_irl)
 

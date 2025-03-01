@@ -24,7 +24,7 @@ async def add_user(user: Annotated[UserSchema, Depends()]) -> MessageSchema:
     return message
 
 
-@users_router.post('/update_user/',
+@users_router.put('/update_user/',
                    summary='Update user / Обновить пользователя')
 async def update_user(user: Annotated[UserSchemaForORM, Depends()]) -> MessageSchema:
     msg = await UserRepository.change_user(user)
