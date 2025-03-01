@@ -90,9 +90,12 @@ class TaskRepository:
             old_task = old_task.scalars().first()
             if not old_task:
                 return f'Запись с id {task_id} не была найдена'
+            if not await TaskRepository.check_user(data.executor):
+                return f'Исполнитель с таким именем не найден в списке пользователей'
             try:
                 old_task.task_name = data.task_name
                 old_task.description = data.description
+                old_task.executor = data.executor
                 old_task.date_of_creation = data.date_of_creation
                 old_task.date_of_completion = data.date_of_completion
                 await session.commit()
@@ -144,10 +147,11 @@ class TaskRepository:
             task_schemas = [TaskSchemaForOrm.model_validate(orm_model) for orm_model in orm_models]
             return task_schemas
 
-
     @staticmethod
     async def check_user(username: str) -> bool:
         async with new_session() as session:
+            if not username:
+                return True
             query = select(UsersORM).where(UsersORM.full_worker_name == username)
             user = await session.execute(query)
             user = user.scalars().all()
