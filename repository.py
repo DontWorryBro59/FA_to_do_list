@@ -53,7 +53,7 @@ class UserRepository:
                 return f'Запись с id {user_id} не была найдена'
             try:
                 old_user.full_worker_name = data.full_worker_name
-                old_user.worker_post= data.worker_post
+                old_user.worker_post = data.worker_post
                 await session.commit()
             except Exception as e:
                 raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
@@ -66,10 +66,11 @@ class TaskRepository:
         async with new_session() as session:
             task_dict = data.model_dump()
             task = TasksORM(**task_dict)
-            session.add(task)
-            await session.flush()
-            await session.commit()
-            return task.id
+            if await TaskRepository.check_user(task.executor):
+                session.add(task)
+                await session.flush()
+                await session.commit()
+                return task.id
 
     @classmethod
     async def select_tasks(cls) -> list[TaskSchemaForOrm]:
@@ -142,3 +143,18 @@ class TaskRepository:
             orm_models = result.scalars().all()
             task_schemas = [TaskSchemaForOrm.model_validate(orm_model) for orm_model in orm_models]
             return task_schemas
+
+
+    @staticmethod
+    async def check_user(username: str) -> bool:
+        async with new_session() as session:
+            query = select(UsersORM).where(UsersORM.full_worker_name == username)
+            user = await session.execute(query)
+            user = user.scalars().all()
+            if len(user) > 1:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT,
+                                    detail='Найдено больше одного пользователя с таким именем')
+            elif len(user) == 1:
+                return True
+            else:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail='Пользователь не найден')
