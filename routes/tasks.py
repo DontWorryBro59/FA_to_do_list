@@ -23,6 +23,7 @@ async def add_task(task: Annotated[TaskSchema, Depends()]) -> MessageSchema:
     message = MessageSchema(message="Task added with id {}".format(task_id))
     return message
 
+
 @tasks_router.post('/update_task/',
                    summary='Update task / Обновить задачу')
 async def update_task(task: Annotated[TaskSchemaForOrm, Depends()]) -> MessageSchema:
@@ -33,7 +34,21 @@ async def update_task(task: Annotated[TaskSchemaForOrm, Depends()]) -> MessageSc
 
 @tasks_router.post('/assign_user_to_task_id/',
                    summary='Assign user to task / Присвоить пользователю задачу')
-async def assign_user_to_task_id(data: AssignIDTaskSchema) -> MessageSchema:
+async def assign_user_to_task_id(data: Annotated[AssignIDTaskSchema, Depends()]) -> MessageSchema:
     msg = await TaskRepository.assign_task_for_id(data)
     message = MessageSchema(message=msg)
     return message
+
+
+@tasks_router.delete('/delete_task_by_id/',
+                     summary='Delete task by id / Удалить задачу по id')
+async def delete_task_by_id(task_id: int) -> MessageSchema:
+    msg = await TaskRepository.delete_task(task_id)
+    message = MessageSchema(message=msg)
+    return message
+
+
+@tasks_router.get('/get_tasks_without_executor/')
+async def get_tasks_without_executor() -> list[TaskSchemaForOrm]:
+    result = await TaskRepository.select_tasks_without_executor()
+    return result

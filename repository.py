@@ -1,5 +1,5 @@
-from sqlalchemy import select
 from fastapi import HTTPException, status as http_status
+from sqlalchemy import select, delete
 
 from database import new_session
 from models.orm_model import UsersORM, TasksORM
@@ -13,7 +13,6 @@ class UserRepository:
             user_dict = data.model_dump()
             user = UsersORM(**user_dict)
             session.add(user)
-            print('[LOG] User was added')
             await session.flush()
             await session.commit()
             return user.id
@@ -27,6 +26,39 @@ class UserRepository:
             user_schemas = [UserSchemaForORM.model_validate(orm_model) for orm_model in orm_models]
             return user_schemas
 
+    @classmethod
+    async def delete_user(cls, id_user_to_delete: int) -> str:
+        async with new_session() as session:
+            check_user = select(UsersORM).where(UsersORM.id == id_user_to_delete)
+            user = await session.execute(check_user)
+            if not user.scalars().first():
+                return f'Пользователь с id {id_user_to_delete} не был найден'
+            query = delete(UsersORM).where(UsersORM.id == id_user_to_delete)
+            try:
+                await session.execute(query)
+                await session.commit()
+            except Exception as e:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
+        return f'Запись с id {id_user_to_delete} была удалена'
+
+    @classmethod
+    async def change_user(cls, data: UserSchemaForORM) -> str:
+        print(data)
+        async with new_session() as session:
+            user_id = data.id
+            query = select(UsersORM).where(UsersORM.id == user_id)
+            old_user = await session.execute(query)
+            old_user = old_user.scalars().first()
+            if not old_user:
+                return f'Запись с id {user_id} не была найдена'
+            try:
+                old_user.full_worker_name = data.full_worker_name
+                old_user.worker_post= data.worker_post
+                await session.commit()
+            except Exception as e:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
+        return f'Запись с id {user_id} была изменена'
+
 
 class TaskRepository:
     @classmethod
@@ -35,7 +67,6 @@ class TaskRepository:
             task_dict = data.model_dump()
             task = TasksORM(**task_dict)
             session.add(task)
-            print('[LOG] Task was added')
             await session.flush()
             await session.commit()
             return task.id
@@ -87,3 +118,27 @@ class TaskRepository:
             except Exception as e:
                 raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
         return f'Запись с id {data.task_id} была изменена'
+
+    @classmethod
+    async def delete_task(cls, id_task_to_delete: int) -> str:
+        async with new_session() as session:
+            query = delete(TasksORM).where(TasksORM.id == id_task_to_delete)
+            check_task = select(TasksORM).where(TasksORM.id == id_task_to_delete)
+            check_result = await session.execute(check_task)
+            if not check_result.scalars().first():
+                return f'Задача с id {id_task_to_delete} не найдена'
+            try:
+                await session.execute(query)
+                await session.commit()
+            except Exception as e:
+                raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(e))
+            return f'Запись с id {id_task_to_delete} была удалена'
+
+    @classmethod
+    async def select_tasks_without_executor(cls) -> list[TaskSchemaForOrm]:
+        async with new_session() as session:
+            query = select(TasksORM).where(TasksORM.executor == None)
+            result = await session.execute(query)
+            orm_models = result.scalars().all()
+            task_schemas = [TaskSchemaForOrm.model_validate(orm_model) for orm_model in orm_models]
+            return task_schemas

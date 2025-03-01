@@ -49,7 +49,7 @@ class TaskSchemaForOrm(TaskSchema):
 
 class AssignIDTaskSchema(BaseModel):
     task_id: int = Field(..., description="Task ID / ID задачи")
-    user_id : int = Field(..., description="User ID / ID пользователя")
+    user_id: int = Field(..., description="User ID / ID пользователя")
 
 
 # Schemas for Users =====================================================================================
@@ -60,7 +60,6 @@ class UserSchema(BaseModel):
 
 class UserSchemaForORM(UserSchema):
     id: int
-
     model_config = ConfigDict(from_attributes=True)
 
 
