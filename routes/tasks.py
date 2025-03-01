@@ -16,6 +16,20 @@ async def get_tasks() -> list[TaskSchemaForOrm]:
     return result
 
 
+@tasks_router.get('/get_tasks_without_executor/',
+                  summary='Get tasks without executor / Получить задачи без исполнителя')
+async def get_tasks_without_executor() -> list[TaskSchemaForOrm]:
+    result = await TaskRepository.select_tasks_without_executor()
+    return result
+
+
+@tasks_router.get('/get_tasks_with_executor/',
+                  summary='Get tasks with executor / Получить задачи с исполнителем')
+async def get_tasks_with_executor() -> list[TaskSchemaForOrm]:
+    result = await TaskRepository.select_tasks_with_executor()
+    return result
+
+
 @tasks_router.post('/add_task/',
                    summary='Add task / Добавить задачу')
 async def add_task(task: Annotated[TaskSchema, Depends()]) -> MessageSchema:
@@ -24,7 +38,7 @@ async def add_task(task: Annotated[TaskSchema, Depends()]) -> MessageSchema:
     return message
 
 
-@tasks_router.post('/update_task/',
+@tasks_router.put('/update_task/',
                    summary='Update task / Обновить задачу')
 async def update_task(task: Annotated[TaskSchemaForOrm, Depends()]) -> MessageSchema:
     msg = await TaskRepository.change_task(task)
@@ -32,7 +46,7 @@ async def update_task(task: Annotated[TaskSchemaForOrm, Depends()]) -> MessageSc
     return message
 
 
-@tasks_router.post('/assign_user_to_task_id/',
+@tasks_router.put('/assign_user_to_task_id/',
                    summary='Assign user to task / Присвоить пользователю задачу')
 async def assign_user_to_task_id(data: Annotated[AssignIDTaskSchema, Depends()]) -> MessageSchema:
     msg = await TaskRepository.assign_task_for_id(data)
@@ -46,9 +60,3 @@ async def delete_task_by_id(task_id: int) -> MessageSchema:
     msg = await TaskRepository.delete_task(task_id)
     message = MessageSchema(message=msg)
     return message
-
-
-@tasks_router.get('/get_tasks_without_executor/')
-async def get_tasks_without_executor() -> list[TaskSchemaForOrm]:
-    result = await TaskRepository.select_tasks_without_executor()
-    return result

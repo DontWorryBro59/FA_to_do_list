@@ -147,6 +147,15 @@ class TaskRepository:
             task_schemas = [TaskSchemaForOrm.model_validate(orm_model) for orm_model in orm_models]
             return task_schemas
 
+    @classmethod
+    async def select_tasks_with_executor(cls) -> list[TaskSchemaForOrm]:
+        async with new_session() as session:
+            query = select(TasksORM).where(TasksORM.executor != None)
+            result = await session.execute(query)
+            orm_models = result.scalars().all()
+            task_schemas = [TaskSchemaForOrm.model_validate(orm_model) for orm_model in orm_models]
+            return task_schemas
+
     @staticmethod
     async def check_user(username: str) -> bool:
         async with new_session() as session:
