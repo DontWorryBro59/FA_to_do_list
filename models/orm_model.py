@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
 from models.schemas import Status
-from datetime import datetime
 
 
 class Base(DeclarativeBase):
